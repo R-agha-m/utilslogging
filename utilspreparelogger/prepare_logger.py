@@ -1,7 +1,15 @@
 from os import makedirs
 from pathlib import Path
-from logging import getLogger, Formatter, StreamHandler
-from logging.handlers import SysLogHandler, TimedRotatingFileHandler
+from logging import (
+    getLogger,
+    Formatter,
+    StreamHandler,
+    Logger,
+)
+from logging.handlers import (
+    SysLogHandler,
+    TimedRotatingFileHandler,
+)
 
 from .enum import EnumLogLevel, EnumLogHandler
 
@@ -53,7 +61,7 @@ class PrepareLogger:
         self.app_logger = None
         self.prepared_handlers = list()
 
-    def perform(self):
+    def perform(self) -> Logger:
         """
         Performs the logger setup and returns the configured logger.
 
