@@ -1,4 +1,7 @@
-from os import makedirs
+from os import (
+    makedirs,
+    sep,
+)
 from pathlib import Path
 from logging import (
     getLogger,
@@ -27,7 +30,7 @@ class PrepareLogger:
         handlers (list[EnumLogHandler]): A list of log handlers to attach to the logger.
         format_ (str, optional): The desired log message format. Defaults to a JSON format.
 
-        timed_rotating_file_handler_input (dict, optional): Configuration for the TimedRotatingFileHandler.
+        timed_rotating_file_handler (dict, optional): Configuration for the TimedRotatingFileHandler.
         sys_log_handler (dict, optional): Configuration for the SysLogHandler.
         stream_handler (dict, optional): Configuration for the StreamHandler.
 
@@ -38,26 +41,29 @@ class PrepareLogger:
 
     def __init__(
             self,
+            project_base_dir: str,
             name: str,
             level: EnumLogLevel,
             handlers: list[EnumLogHandler],
             format_: str = '{"time":"%(asctime)s", "name": "%(name)s", "level": "%(levelname)s", '
                            '"function": "%(funcName)s", "message": "%(message)s"}',
 
-            timed_rotating_file_handler_input: dict = None,
-            sys_log_handler: dict = None,
+            timed_rotating_file_handler: dict = None,
+            syslog_handler: dict = None,
             stream_handler: dict = None,
     ) -> None:
+        self.project_base_dir = project_base_dir
         self.name = name
         self.level = level.value.upper()
         self.handlers = handlers
 
         self.format = format_
 
-        self.timed_rotating_file_handler_input = timed_rotating_file_handler_input or dict()
-        self.sys_log_handler = sys_log_handler or dict()
-        self.stream_handler = stream_handler or dict()
+        self.timed_rotating_file_handler = timed_rotating_file_handler or dict()
+        self.syslog_handler_input = syslog_handler or dict()
+        self.stream_handler_input = stream_handler or dict()
 
+        self.file_path = None
         self.app_logger = None
         self.prepared_handlers = list()
 
@@ -123,9 +129,14 @@ class PrepareLogger:
         It creates the necessary parent folders for the log file and adds the handler to the prepared handlers list.
 
         """
+        self.file_path = self.project_base_dir + sep + "logs" + sep + self.timed_rotating_file_handler["filename"]
+
         self._create_parent_folders()
 
-        handler = TimedRotatingFileHandler(**self.timed_rotating_file_handler_input)
+        handler = TimedRotatingFileHandler(**{
+            **self.timed_rotating_file_handler,
+            'filename': self.file_path,
+        })
         self.prepared_handlers.append(handler)
 
     def _create_parent_folders(self):
@@ -135,7 +146,7 @@ class PrepareLogger:
         This method creates the necessary parent folders for the log file specified in the configuration.
 
         """
-        log_dir = Path(self.timed_rotating_file_handler_input["filename"]).resolve().parent
+        log_dir = Path(self.file_path).resolve().parent
 
         makedirs(
             log_dir,
@@ -150,7 +161,7 @@ class PrepareLogger:
         It adds the handler to the prepared handlers list.
 
         """
-        handler = SysLogHandler(**self.sys_log_handler)
+        handler = SysLogHandler(**self.syslog_handler_input)
         self.prepared_handlers.append(handler)
 
     def _prepare_console_handler(self):
@@ -159,7 +170,7 @@ class PrepareLogger:
         It adds the handler to the prepared handlers list.
 
         """
-        handler = StreamHandler(**self.stream_handler)
+        handler = StreamHandler(**self.stream_handler_input)
         self.prepared_handlers.append(handler)
 
     def _set_formatter(self):
