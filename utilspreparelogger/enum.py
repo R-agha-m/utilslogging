@@ -63,8 +63,8 @@ class EnumLogStream(str, Enum):
 
 
 class EnumOrderBy(str, Enum):
-    ascending = "ascend"
-    descending = "descend"
+    ascending = "A"
+    descending = "D"
 
 
 class EnumRunMode(str, Enum):
