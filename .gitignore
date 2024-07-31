@@ -121,3 +121,4 @@ wheels/
 
 .configloader/
 #configs/
+utilsdatabase.egg-info
